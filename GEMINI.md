@@ -31,8 +31,15 @@
 >   - 禁止运行交互式命令（`pause`、`Read-Host`、无参数 `cmd`、无参数 `powershell`）
 >   - 查看文件内容优先使用 IDE 内置的 `view_file` 工具而非终端命令
 >
-> **PowerShell 7/PowerShell 命令规范**（防止终端卡住）：
->   - **直接使用 PowerShell 7/PowerShell 命令**：`Get-Content`、`Get-ChildItem`、`Copy-Item`、`Remove-Item`、`New-Item` 等
+> **PowerShell 7/PowerShell 命令执行规范**（防止终端卡住）：
+>   - **使用 -NoProfile 参数**：务必带上 `-NoProfile` 参数以规避个人配置文件的干扰
+>   - **标准命令封装格式**：
+>     - PowerShell 7：`pwsh -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "你的命令"`
+>     - PowerShell：`powershell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "你的命令"`
+>   - **强制纯文本输出**：获取输出时，将结果显式转换为纯文本以避免格式化问题：
+>     `$PSStyle.OutputRendering = [System.Management.Automation.OutputRendering]::PlainText`
+>   - **避免进度条命令**：如 `Expand-Archive` 需加 `-Force` 参数
+>   - **直接使用 PowerShell cmdlet**：`Get-Content`、`Get-ChildItem`、`Copy-Item`、`Remove-Item`、`New-Item` 等
 >   - **避免 CMD 命令**：在 PowerShell 中避免使用 `type`、`dir`、`copy` 等 CMD 命令，可能导致卡住
 >   - **必须用 CMD 时**：使用 `cmd /c "命令"` 前缀
 >
@@ -45,6 +52,7 @@
 >   | 删除文件 | `Remove-Item file` |
 >   | 创建文件夹 | `New-Item -ItemType Directory -Name folder` |
 >   | 运行程序 | `.\main.exe` |
+>   | 解压文件 | `Expand-Archive -Path src.zip -DestinationPath dst -Force` |
 >
 
 
