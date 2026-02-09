@@ -49,10 +49,10 @@
 > | 7 | `/superpowers-tdd` | 测试驱动开发 | 需要严格TDD模式时 |
 > | 8 | `/superpowers-git-commit` | Git分批提交 | 代码修改完成后提交推送 |
 >
-> **工作流衔接规则**：
-> - **头脑风暴后禁止自动生成计划**：`/superpowers-brainstorm` 完成后，必须等待用户调用 `/superpowers-write-plan`，禁止自动生成 `implementation_plan.md`
-> - 头脑风暴结束时应提示用户：「头脑风暴完成，请使用 `/superpowers-write-plan` 生成详细计划」
-> - 计划编写结束时应提示用户：「计划编写完成，请使用 `/superpowers-execute-plan` 执行计划」
+> **🚫 工作流衔接规则（强制）**：
+> - 🚫 **头脑风暴后禁止自动生成计划**：`/superpowers-brainstorm` 完成后，**禁止**自动生成 `implementation_plan.md`，必须等待用户调用 `/superpowers-write-plan`
+> - ✅ 头脑风暴结束时**必须**提示：「头脑风暴完成，请使用 `/superpowers-write-plan` 生成详细计划」
+> - ✅ 计划编写结束时**必须**提示：「计划编写完成，请使用 `/superpowers-execute-plan` 执行计划」
 >
 > **Git 提交确认规则**：
 > - 即使在执行计划（`/superpowers-execute-plan`）过程中，**Git 相关操作必须单独作为检查点**，等待用户明确批准后再执行
