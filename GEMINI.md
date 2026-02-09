@@ -16,6 +16,10 @@
 >   - ⚠️ **防重名**：若目录已存在，使用 `*-v2`、`*-v3` 递增命名
 >
 > **优先级**：用户规则 > Skill
+>
+> **任务文档规范**：
+>   - 📛 **文件命名**：任务清单用 `task.md`，实施计划用 `plan.md`（非 `implementation_plan.md`）
+>   - 🚫 **禁用Artifact模式**：创建任务文档时**禁止使用** `IsArtifact=true`，直接用 `write_to_file` 写入 `docs/tasks/` 目录
 
 
 **核心理念与原则**
