@@ -48,6 +48,16 @@
 > | 6 | `/superpowers-debug` | 系统化调试 | 遇到Bug或异常行为时 |
 > | 7 | `/superpowers-tdd` | 测试驱动开发 | 需要严格TDD模式时 |
 > | 8 | `/superpowers-git-commit` | Git分批提交 | 代码修改完成后提交推送 |
+>
+> **工作流衔接规则**：
+> - **头脑风暴后禁止自动生成计划**：`/superpowers-brainstorm` 完成后，必须等待用户调用 `/superpowers-write-plan`，禁止自动生成 `implementation_plan.md`
+> - 头脑风暴结束时应提示用户：「头脑风暴完成，请使用 `/superpowers-write-plan` 生成详细计划」
+> - 计划编写结束时应提示用户：「计划编写完成，请使用 `/superpowers-execute-plan` 执行计划」
+>
+> **Git 提交确认规则**：
+> - 即使在执行计划（`/superpowers-execute-plan`）过程中，**Git 相关操作必须单独作为检查点**，等待用户明确批准后再执行
+> - 包括但不限于：`git commit`、`git push`、`git merge`、`git rebase`
+> - 仅 `git add`、`git status`、`git diff` 等只读或暂存操作可以自动执行
 
 **工具使用规范**
 
@@ -57,9 +67,10 @@
 
 > **终端执行规范**（按优先级降级）：
 >   1. **优先使用 PowerShell 7**：默认使用 PowerShell 7 执行命令
->   2. **PowerShell 7 超时降级 PowerShell**：如果 PowerShell 7 命令长时间无响应（卡死），改用系统自带 PowerShell 重试
->   3. **PowerShell 失败降级 CMD**：如果 PowerShell 仍失败，最后尝试 CMD；避免中文乱码可加 `chcp 65001` 前缀或使用 `cmd /c "chcp 65001 && <命令>"`
+>   2. **PowerShell 7 失败降级 CMD**：如果 PowerShell 7 失败，尝试 CMD；避免中文乱码可加 `chcp 65001` 前缀或使用 `cmd /c "chcp 65001 && <命令>"`
 >   - 禁止运行交互式命令（`pause`、`Read-Host`、无参数 `cmd`、无参数 `powershell`）
+>   2. **CMD 超时降级 PowerShell**：如果 CMD 命令长时间无响应（卡死），改用系统自带 PowerShell 重试
+
 >   - 查看文件内容优先使用 IDE 内置的 `view_file` 工具而非终端命令
 >
 > **PowerShell 7/PowerShell 命令执行规范**（防止终端卡住）：
