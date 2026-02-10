@@ -86,32 +86,46 @@
 >      - 封装：  
 >        `pwsh -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; 你的命令"`
 >
->   2. **PowerShell 7（写文件兜底：生成→写入→读取→删除）**：当出现“命令执行完了你能看到结果，但系统抓不到输出一直重试最终超时 / 或输出为空但预期有输出”等情况，改为写临时文件 `.\tmp\<时间戳>.txt` 再读取并删除  
+>   2. **PowerShell 7（写文件兜底：只写入，不读取不删除）**：当出现"命令执行完了你能看到结果，但系统抓不到输出一直重试最终超时 / 或输出为空但预期有输出"等情况，改为**只写**临时文件 `.\tmp\<时间戳>.txt`  
+>      - ⚠️ 写入后用 `view_file` 工具读取文件内容（走 IDE 通道，绕开 stdout），读完后单独命令删除  
+>      - ⚠️ 命令发出后**不要等** `command_status` 完成，直接用 `view_file` 读临时文件（等待只会重蹈 stdout 阻塞的覆辙）  
+>      - ⚠️ **不要嵌套** `pwsh -Command`（`run_command` 的 shell 本身就是 pwsh，嵌套会导致 `$` 变量被外层展开为空）  
 >      - 示例（替换 `<命令>`）：  
 >        ```powershell
->        pwsh -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "$ts=Get-Date -Format 'yyyyMMdd_HHmmss_fff'; $tmpDir=Join-Path (Get-Location) 'tmp'; New-Item -ItemType Directory -Force -Path $tmpDir | Out-Null; $tmp=Join-Path $tmpDir ($ts + '.txt'); try { [Console]::OutputEncoding=[System.Text.Encoding]::UTF8; & { <命令> } *>&1 | Out-File -LiteralPath $tmp -Encoding utf8 -Width 5000; Get-Content -LiteralPath $tmp -Raw -Encoding utf8 } finally { Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue }"
+>        $ts=Get-Date -Format 'yyyyMMdd_HHmmss_fff'; $tmpDir=Join-Path (Get-Location) 'tmp'; New-Item -ItemType Directory -Force -Path $tmpDir | Out-Null; $tmp=Join-Path $tmpDir ($ts + '.txt'); [Console]::OutputEncoding=[System.Text.Encoding]::UTF8; & { <命令> } *>&1 | Out-File -LiteralPath $tmp -Encoding utf8 -Width 5000; Write-Output $tmp
 >        ```
+>      - 读取：`view_file` 工具读 `.\tmp\<时间戳>.txt`  
+>      - 清理：`Remove-Item -LiteralPath '.\tmp\<时间戳>.txt' -Force`
 >
 >   3. **CMD（降级）**：PowerShell 7 执行失败则尝试 CMD（避免中文乱码）  
 >      - 封装：  
 >        `cmd /c "chcp 65001>nul && 你的命令"`
 >
->   4. **CMD（写文件兜底：生成→写入→读取→删除）**：CMD 执行完但抓不到输出时，写入当前项目 `.\tmp\`，再读取并删除  
->      - 说明：CMD 自己拼“可靠时间戳”很容易受本地化影响，所以这里用 `%RANDOM%` 做简单去重；如需更强去重建议直接用第 2 条（PS7 写文件兜底）  
+>   4. **CMD（写文件兜底：只写入，不读取不删除）**：CMD 执行完但抓不到输出时，写入当前项目 `.\tmp\`  
+>      - 说明：CMD 自己拼"可靠时间戳"很容易受本地化影响，所以这里用 `%RANDOM%` 做简单去重；如需更强去重建议直接用第 2 条（PS7 写文件兜底）  
+>      - ⚠️ 写入后用 `view_file` 工具读取文件内容，读完后单独命令删除  
+>      - ⚠️ 命令发出后**不要等** `command_status` 完成，直接用 `view_file` 读临时文件  
 >      - 示例（替换 `<命令>`）：  
 >        ```bat
->        cmd /c "chcp 65001>nul && if not exist .\tmp mkdir .\tmp && set f=.\tmp\ts_%RANDOM%%RANDOM%.txt && (<命令>) > "%f%" 2>&1 && type "%f%" && del /f /q "%f%""
+>        cmd /v:on /c "chcp 65001>nul && if not exist .\tmp mkdir .\tmp && set "f=.\tmp\ts_%RANDOM%%RANDOM%.txt" && (<命令>) > "!f!" 2>&1 && echo !f!"
 >        ```
+>      - 读取：`view_file` 工具读输出的文件路径  
+>      - 清理：`del /f /q ".\tmp\ts_XXX.txt"`
 >
 >   5. **PowerShell（系统自带，降级）**：若 CMD 长时间无响应（卡死）或需要改用系统 PowerShell，则使用：  
 >      - 封装（已合并 UTF-8 输出设置）：  
 >        `powershell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; 你的命令"`
 >
->   6. **PowerShell（写文件兜底：生成→写入→读取→删除）**：系统 PowerShell 同样在抓不到输出时使用写文件兜底  
+>   6. **PowerShell（写文件兜底：只写入，不读取不删除）**：系统 PowerShell 同样在抓不到输出时使用写文件兜底  
+>      - ⚠️ 写入后用 `view_file` 工具读取文件内容，读完后单独命令删除  
+>      - ⚠️ 命令发出后**不要等** `command_status` 完成，直接用 `view_file` 读临时文件  
+>      - ⚠️ **不要嵌套** `powershell -Command`（同理，避免 `$` 变量被外层展开为空）  
 >      - 示例（替换 `<命令>`）：  
 >        ```powershell
->        powershell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "$ts=Get-Date -Format 'yyyyMMdd_HHmmss_fff'; $tmpDir=Join-Path (Get-Location) 'tmp'; New-Item -ItemType Directory -Force -Path $tmpDir | Out-Null; $tmp=Join-Path $tmpDir ($ts + '.txt'); try { [Console]::OutputEncoding=[System.Text.Encoding]::UTF8; & { <命令> } 2>&1 | Out-File -LiteralPath $tmp -Encoding utf8 -Width 5000; Get-Content -LiteralPath $tmp -Raw -Encoding utf8 } finally { Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue }"
+>        $ts=Get-Date -Format 'yyyyMMdd_HHmmss_fff'; $tmpDir=Join-Path (Get-Location) 'tmp'; New-Item -ItemType Directory -Force -Path $tmpDir | Out-Null; $tmp=Join-Path $tmpDir ($ts + '.txt'); [Console]::OutputEncoding=[System.Text.Encoding]::UTF8; & { <命令> } 2>&1 | Out-File -LiteralPath $tmp -Encoding utf8 -Width 5000; Write-Output $tmp
 >        ```
+>      - 读取：`view_file` 工具读 `.\tmp\<时间戳>.txt`  
+>      - 清理：`Remove-Item -LiteralPath '.\tmp\<时间戳>.txt' -Force`
 >
 > **常用命令速查**：
 >   | 任务 | PowerShell 7/PowerShell 命令 |
@@ -123,7 +137,6 @@
 >   | 创建文件夹 | `New-Item -ItemType Directory -Name folder` |
 >   | 运行程序 | `.\main.exe` |
 >   | 解压文件 | `Expand-Archive -Path src.zip -DestinationPath dst -Force` |
->
 
 
 **代码编写规范**
@@ -157,5 +170,4 @@
 > **语言要求**：所有回复、思考过程及任务清单，均须使用中文。
 > **固定指令**：`Implementation Plan, Task List and Thought in Chinese`
 > **git信息**：每次修改了代码就要提供本次任务迄今为止的git的提交信息
-
 
