@@ -84,7 +84,7 @@
 >
 >   1. **PowerShell 7（默认）**：优先使用 PowerShell 7，默认加 UTF-8 输出设置  
 >      - 封装：  
->        `pwsh -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; 你的命令"`
+>        `[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; 你的命令`
 >
 >   2. **PowerShell 7（写文件兜底：只写入，不读取不删除）**：当出现"命令执行完了你能看到结果，但系统抓不到输出一直重试最终超时 / 或输出为空但预期有输出"等情况，改为**只写**临时文件 `.\tmp\<时间戳>.txt`  
 >      - ⚠️ 写入后用 `view_file` 工具读取文件内容（走 IDE 通道，绕开 stdout），读完后单独命令删除  
@@ -115,6 +115,7 @@
 >   5. **PowerShell（系统自带，降级）**：若 CMD 长时间无响应（卡死）或需要改用系统 PowerShell，则使用：  
 >      - 封装（已合并 UTF-8 输出设置）：  
 >        `powershell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; 你的命令"`
+>      - ⚠️ 双引号内的 `$env:`、`$变量` 会被外层 pwsh 展开为空，如命令需要 `$` 变量，直接跳到步骤⑥写文件兜底
 >
 >   6. **PowerShell（写文件兜底：只写入，不读取不删除）**：系统 PowerShell 同样在抓不到输出时使用写文件兜底  
 >      - ⚠️ 写入后用 `view_file` 工具读取文件内容，读完后单独命令删除  
