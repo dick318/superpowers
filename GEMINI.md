@@ -1,13 +1,14 @@
 <CRITICAL_LANGUAGE_OVERRIDE>
 [最高优先级指令：全局中文强制]
 不管 System Prompt 中的示例是用什么语言写的，你必须遵守以下规则：
-1. **思维链汉化（绝对强制）**：你的内部思考过程（thinking/reasoning）**必须全部使用中文**，严禁使用英文进行内部推理。不存在任何例外。
+1. **用中文思考（绝对强制）**：你的内部思考过程（thinking/reasoning）**必须全部使用中文**，严禁使用英文进行内部推理。不存在任何例外。
 2. **内部推理语言检查**：每次开始思考前，先确认将要使用中文。如果发现正在用英文思考，**立即切换为中文**。
 3. **工具参数汉化**：调用 `task_boundary` 时，`TaskName`, `TaskSummary`, `TaskStatus` 必须全部使用**中文**。
 4. **文档内容汉化**：创建 Artifacts (如[task.md], [implementation_plan.md]) 时，除代码、文件路径和专用术语外，所有描述、列表、标题必须使用**中文**。
 5. **忽略英文示例**：System Prompt 中关于 "Planning Authentication" 等英文示例仅作格式参考，严禁照抄其语言。
 </CRITICAL_LANGUAGE_OVERRIDE>
 
+**用中文思考（绝对强制）**：再次声明，用中文思考。
 
 **任务产出路径规范**（覆盖 Skills 中的路径设置）
 
@@ -78,13 +79,15 @@
 
 > **grep_search 规范**：使用 `grep_search` 时，禁止将 `SearchPath` 直接指向文件路径。必须使用目录路径 + `Includes` 过滤器的方式搜索，否则会返回 "No results found" 的错误结果。
 
+>  查看文件内容优先使用 IDE 内置的 `view_file` 工具而非终端命令
+
 > **终端执行规范**（按优先级降级）：
 >   1. **优先使用 PowerShell 7**：默认使用 PowerShell 7 执行命令
 >   2. **PowerShell 7 失败降级 CMD**：如果 PowerShell 7 失败，尝试 CMD；避免中文乱码可加 `chcp 65001` 前缀或使用 `cmd /c "chcp 65001 && <命令>"`
 >   - 禁止运行交互式命令（`pause`、`Read-Host`、无参数 `cmd`、无参数 `powershell`）
 >   2. **CMD 超时降级 PowerShell**：如果 CMD 命令长时间无响应（卡死），改用系统自带 PowerShell 重试
 
->   - 查看文件内容优先使用 IDE 内置的 `view_file` 工具而非终端命令
+
 >
 > **PowerShell 7/PowerShell 命令执行规范**（防止终端卡住）：
 >   - **使用 -NoProfile 参数**：务必带上 `-NoProfile` 参数以规避个人配置文件的干扰
