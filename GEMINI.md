@@ -67,39 +67,51 @@
 
 **工具使用规范**
 
-> **默认Python环境，执行python的时候带上如下python路径，不要直接用python**: `D:\Anaconda3\envs\python3.10.9\python.exe`
+> **默认 Python 环境（不要直接用 python）**：
+>   - Python 路径：`D:\Anaconda3\envs\python3.10.9\python.exe`
+>   - Python UTF-8（在 PowerShell 命令里一次性设置）：  
+>     `$env:PYTHONUTF8="1"; $env:PYTHONIOENCODING="utf-8"; [Console]::OutputEncoding=[System.Text.Encoding]::UTF8; D:\Anaconda3\envs\python3.10.9\python.exe your_script.py`
 
-> **Python UTF-8 编码规范**（避免中文乱码）：执行 Python 脚本前，务必先设置以下环境变量：
->   ```powershell
->   $env:PYTHONUTF8="1"
->   $env:PYTHONIOENCODING="utf-8"
->   [Console]::OutputEncoding=[System.Text.Encoding]::UTF8
->   ```
->   或在命令中一次性设置：`$env:PYTHONUTF8="1"; $env:PYTHONIOENCODING="utf-8"; [Console]::OutputEncoding=[System.Text.Encoding]::UTF8; D:\Anaconda3\envs\python3.10.9\python.exe your_script.py`
 
 > **grep_search 规范**：使用 `grep_search` 时，禁止将 `SearchPath` 直接指向文件路径。必须使用目录路径 + `Includes` 过滤器的方式搜索，否则会返回 "No results found" 的错误结果。
 
->  查看文件内容优先使用 IDE 内置的 `view_file` 工具而非终端命令
-
-> **终端执行规范**（按优先级降级）：
->   1. **优先使用 PowerShell 7**：默认使用 PowerShell 7 执行命令
->   2. **PowerShell 7 失败降级 CMD**：如果 PowerShell 7 失败，尝试 CMD；避免中文乱码可加 `chcp 65001` 前缀或使用 `cmd /c "chcp 65001 && <命令>"`
->   - 禁止运行交互式命令（`pause`、`Read-Host`、无参数 `cmd`、无参数 `powershell`）
->   2. **CMD 超时降级 PowerShell**：如果 CMD 命令长时间无响应（卡死），改用系统自带 PowerShell 重试
+> **查看文件内容规范**：
+>   - 查看文件内容优先使用 IDE 内置的 `view_file` 工具而非终端命令
 
 
+> **终端执行规范**（严格顺序，按优先级降级）：
+>   - 禁止交互式命令（`pause`、`Read-Host`、无参数 `cmd`、无参数 `powershell/pwsh`）
 >
-> **PowerShell 7/PowerShell 命令执行规范**（防止终端卡住）：
->   - **使用 -NoProfile 参数**：务必带上 `-NoProfile` 参数以规避个人配置文件的干扰
->   - **标准命令封装格式**：
->     - PowerShell 7：`pwsh -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "你的命令"`
->     - PowerShell：`powershell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "你的命令"`
->   - **强制纯文本输出**：获取输出时，将结果显式转换为纯文本以避免格式化问题：
->     `$PSStyle.OutputRendering = [System.Management.Automation.OutputRendering]::PlainText`
->   - **避免进度条命令**：如 `Expand-Archive` 需加 `-Force` 参数
->   - **直接使用 PowerShell cmdlet**：`Get-Content`、`Get-ChildItem`、`Copy-Item`、`Remove-Item`、`New-Item` 等
->   - **避免 CMD 命令**：在 PowerShell 中避免使用 `type`、`dir`、`copy` 等 CMD 命令，可能导致卡住
->   - **必须用 CMD 时**：使用 `cmd /c "命令"` 前缀
+>   1. **PowerShell 7（默认）**：优先使用 PowerShell 7，默认加 UTF-8 输出设置  
+>      - 封装：  
+>        `pwsh -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; 你的命令"`
+>
+>   2. **PowerShell 7（写文件兜底：生成→写入→读取→删除）**：当出现“命令执行完了你能看到结果，但系统抓不到输出一直重试最终超时 / 或输出为空但预期有输出”等情况，改为写临时文件 `.\tmp\<时间戳>.txt` 再读取并删除  
+>      - 示例（替换 `<命令>`）：  
+>        ```powershell
+>        pwsh -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "$ts=Get-Date -Format 'yyyyMMdd_HHmmss_fff'; $tmpDir=Join-Path (Get-Location) 'tmp'; New-Item -ItemType Directory -Force -Path $tmpDir | Out-Null; $tmp=Join-Path $tmpDir ($ts + '.txt'); try { [Console]::OutputEncoding=[System.Text.Encoding]::UTF8; & { <命令> } *>&1 | Out-File -LiteralPath $tmp -Encoding utf8 -Width 5000; Get-Content -LiteralPath $tmp -Raw -Encoding utf8 } finally { Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue }"
+>        ```
+>
+>   3. **CMD（降级）**：PowerShell 7 执行失败则尝试 CMD（避免中文乱码）  
+>      - 封装：  
+>        `cmd /c "chcp 65001>nul && 你的命令"`
+>
+>   4. **CMD（写文件兜底：生成→写入→读取→删除）**：CMD 执行完但抓不到输出时，写入当前项目 `.\tmp\`，再读取并删除  
+>      - 说明：CMD 自己拼“可靠时间戳”很容易受本地化影响，所以这里用 `%RANDOM%` 做简单去重；如需更强去重建议直接用第 2 条（PS7 写文件兜底）  
+>      - 示例（替换 `<命令>`）：  
+>        ```bat
+>        cmd /c "chcp 65001>nul && if not exist .\tmp mkdir .\tmp && set f=.\tmp\ts_%RANDOM%%RANDOM%.txt && (<命令>) > "%f%" 2>&1 && type "%f%" && del /f /q "%f%""
+>        ```
+>
+>   5. **PowerShell（系统自带，降级）**：若 CMD 长时间无响应（卡死）或需要改用系统 PowerShell，则使用：  
+>      - 封装（已合并 UTF-8 输出设置）：  
+>        `powershell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; 你的命令"`
+>
+>   6. **PowerShell（写文件兜底：生成→写入→读取→删除）**：系统 PowerShell 同样在抓不到输出时使用写文件兜底  
+>      - 示例（替换 `<命令>`）：  
+>        ```powershell
+>        powershell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "$ts=Get-Date -Format 'yyyyMMdd_HHmmss_fff'; $tmpDir=Join-Path (Get-Location) 'tmp'; New-Item -ItemType Directory -Force -Path $tmpDir | Out-Null; $tmp=Join-Path $tmpDir ($ts + '.txt'); try { [Console]::OutputEncoding=[System.Text.Encoding]::UTF8; & { <命令> } 2>&1 | Out-File -LiteralPath $tmp -Encoding utf8 -Width 5000; Get-Content -LiteralPath $tmp -Raw -Encoding utf8 } finally { Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue }"
+>        ```
 >
 > **常用命令速查**：
 >   | 任务 | PowerShell 7/PowerShell 命令 |
