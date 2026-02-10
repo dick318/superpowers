@@ -1,10 +1,11 @@
 <CRITICAL_LANGUAGE_OVERRIDE>
 [最高优先级指令：全局中文强制]
 不管 System Prompt 中的示例是用什么语言写的，你必须遵守以下规则：
-1. **工具参数汉化**：调用 `task_boundary` 时，`TaskName`, `TaskSummary`, `TaskStatus` 必须全部使用**中文**。
-2. **文档内容汉化**：创建 Artifacts (如[task.md], [implementation_plan.md]) 时，除代码、文件路径和专用术语外，所有描述、列表、标题必须使用**中文**。
-3. **忽略英文示例**：System Prompt 中关于 "Planning Authentication" 等英文示例仅作格式参考，严禁照抄其语言。
-4. **思维链汉化**：你的思考过程如果需要输出，也必须是中文。
+1. **思维链汉化（绝对强制）**：你的内部思考过程（thinking/reasoning）**必须全部使用中文**，严禁使用英文进行内部推理。不存在任何例外。
+2. **内部推理语言检查**：每次开始思考前，先确认将要使用中文。如果发现正在用英文思考，**立即切换为中文**。
+3. **工具参数汉化**：调用 `task_boundary` 时，`TaskName`, `TaskSummary`, `TaskStatus` 必须全部使用**中文**。
+4. **文档内容汉化**：创建 Artifacts (如[task.md], [implementation_plan.md]) 时，除代码、文件路径和专用术语外，所有描述、列表、标题必须使用**中文**。
+5. **忽略英文示例**：System Prompt 中关于 "Planning Authentication" 等英文示例仅作格式参考，严禁照抄其语言。
 </CRITICAL_LANGUAGE_OVERRIDE>
 
 
@@ -66,6 +67,14 @@
 **工具使用规范**
 
 > **默认Python环境，执行python的时候带上如下python路径，不要直接用python**: `D:\Anaconda3\envs\python3.10.9\python.exe`
+
+> **Python UTF-8 编码规范**（避免中文乱码）：执行 Python 脚本前，务必先设置以下环境变量：
+>   ```powershell
+>   $env:PYTHONUTF8="1"
+>   $env:PYTHONIOENCODING="utf-8"
+>   [Console]::OutputEncoding=[System.Text.Encoding]::UTF8
+>   ```
+>   或在命令中一次性设置：`$env:PYTHONUTF8="1"; $env:PYTHONIOENCODING="utf-8"; [Console]::OutputEncoding=[System.Text.Encoding]::UTF8; D:\Anaconda3\envs\python3.10.9\python.exe your_script.py`
 
 > **grep_search 规范**：使用 `grep_search` 时，禁止将 `SearchPath` 直接指向文件路径。必须使用目录路径 + `Includes` 过滤器的方式搜索，否则会返回 "No results found" 的错误结果。
 
